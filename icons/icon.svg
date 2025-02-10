@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#007bff"/>
+  
+  <!-- Dollar sign -->
+  <text x="64" y="84" 
+        font-family="Arial, sans-serif" 
+        font-size="80" 
+        font-weight="bold" 
+        fill="white" 
+        text-anchor="middle">
+    $
+  </text>
+  
+  <!-- AI dots -->
+  <circle cx="40" cy="40" r="4" fill="white"/>
+  <circle cx="88" cy="40" r="4" fill="white"/>
+  <path d="M45 95 Q64 105 83 95" stroke="white" stroke-width="4" fill="none"/>
+</svg> 

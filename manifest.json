@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "Tax Assistant AI",
+  "version": "1.0",
+  "description": "An AI assistant to help users with online tax filing questions.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage",
+    "unlimitedStorage"
+  ],
+  "optional_permissions": [
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://*.turbotax.com/*",
+    "https://*.hrblock.com/*",
+    "https://*.taxact.com/*",
+    "https://*.jacksonhewitt.com/*",
+    "https://*.irs.gov/*"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "settings.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.turbotax.com/*",
+        "https://*.hrblock.com/*",
+        "https://*.taxact.com/*",
+        "https://*.jacksonhewitt.com/*",
+        "https://*.irs.gov/*"
+      ],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["settings.html", "settings.js", "styles.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+} 

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tax Assistant AI - Settings</title>
+  <style>
+    body {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #f8f9fa;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #2c3e50;
+      margin: 0 0 24px 0;
+    }
+
+    .settings-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #495057;
+      font-weight: 500;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      padding-right: 40px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.15);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      padding: 8px;
+      margin-right: -4px;
+      cursor: pointer;
+      color: #6c757d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .toggle-password:hover {
+      color: #495057;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 6px;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .save-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .save-btn:hover:not(:disabled) {
+      background-color: #218838;
+    }
+
+    .test-btn {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .test-btn:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+
+    .status-message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status-message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status-message.info {
+      background-color: #e2e3e5;
+      color: #383d41;
+      border: 1px solid #d6d8db;
+    }
+
+    .show {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Settings</h1>
+  <div class="settings-container">
+    <div class="form-group">
+      <label for="api-key">OpenAI API Key</label>
+      <div class="input-wrapper">
+        <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
+        <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+      <div class="help-text">
+        Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI's platform</a>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="model-select">OpenAI Model</label>
+      <select id="model-select">
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
+      </select>
+      <div class="help-text">
+        Select the OpenAI model to use for responses. gpt-4o is recommended for most cases.
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button class="test-btn" id="test-key">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        Test Key
+      </button>
+      <button class="save-btn" id="save-settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Save Settings
+      </button>
+    </div>
+    <div class="status-message" id="status-message"></div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html> 
