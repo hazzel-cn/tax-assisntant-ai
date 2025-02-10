@@ -678,7 +678,7 @@ async function handleReadPage() {
       <div class="message ai-message loading-message">
         <div class="loading-content">
           <div class="loading-spinner-small"></div>
-          <span>Reading page content...</span>
+          <span>Capturing full page content...</span>
         </div>
       </div>
     `;
@@ -687,28 +687,40 @@ async function handleReadPage() {
     chatHistory.scrollTop = chatHistory.scrollHeight;
     
     try {
-      // Capture screenshot
-      const dataUrl = await Promise.race([
-        chrome.tabs.captureVisibleTab(null, {format: 'jpeg'}),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Screenshot capture timed out')), 10000))
-      ]);
+      // Inject content script if not already injected
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      });
+
+      // Request full page screenshot from content script
+      const response = await new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tab.id, { action: 'captureFullPage' }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(`Content script error: ${chrome.runtime.lastError.message}`));
+            return;
+          }
+          if (!response) {
+            reject(new Error('No response from content script. Please refresh the page and try again.'));
+            return;
+          }
+          resolve(response);
+        });
+      });
       
-      if (!dataUrl) {
-        throw new Error('Failed to capture screenshot');
+      if (!response?.dataUrl) {
+        throw new Error('Failed to capture page content: No image data received');
       }
 
       // Remove loading message
       loadingMessage.remove();
 
-      // Create and compress the screenshot
-      const compressedDataUrl = await compressImage(dataUrl);
-      
       // Create screenshot preview
       const screenshotDiv = document.createElement('div');
       screenshotDiv.className = 'screenshot-preview';
       
       const img = document.createElement('img');
-      img.src = compressedDataUrl;
+      img.src = response.dataUrl;
       img.style.maxWidth = '100%';
       img.style.height = 'auto';
       img.style.borderRadius = '4px';
@@ -728,7 +740,7 @@ async function handleReadPage() {
       // Add confirmation message
       const messageDiv = document.createElement('div');
       messageDiv.className = 'message-content';
-      messageDiv.textContent = 'AI: I\'ve captured the visible part of the page. Would you like me to analyze it?';
+      messageDiv.textContent = 'AI: I\'ve captured the entire page. Would you like me to analyze it?';
       wrapper.appendChild(messageDiv);
       
       // Add screenshot
@@ -780,7 +792,13 @@ async function handleReadPage() {
             throw new Error('Please set your OpenAI API key in the settings first');
           }
 
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          // Use the screenshot data URL from the earlier capture
+          const screenshotDataUrl = response.dataUrl;
+          if (!screenshotDataUrl) {
+            throw new Error('Screenshot data not available');
+          }
+
+          const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -807,7 +825,7 @@ async function handleReadPage() {
                     {
                       type: "image_url",
                       image_url: {
-                        url: compressedDataUrl,
+                        url: screenshotDataUrl,
                         detail: "high"
                       }
                     }
@@ -822,12 +840,12 @@ async function handleReadPage() {
           // Remove analyzing message
           analyzingMessage.remove();
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+          if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(errorData.error?.message || `API Error: ${apiResponse.status}`);
           }
 
-          const data = await response.json();
+          const data = await apiResponse.json();
           if (!data.choices?.[0]?.message?.content) {
             throw new Error('Invalid response format from AI service');
           }
@@ -848,16 +866,43 @@ async function handleReadPage() {
     } catch (screenshotError) {
       console.error('Screenshot failed:', screenshotError);
       loadingMessage.remove();
-      // If screenshot fails, fall back to extracting content
-      await extractContent(tab);
+      
+      // Show detailed error message
+      const errorDetails = document.createElement('div');
+      errorDetails.className = 'error-details';
+      errorDetails.textContent = `Error details: ${screenshotError.message}`;
+      
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'message error-message';
+      errorMessage.innerHTML = `
+        Failed to capture page content. This might be because:
+        <ul>
+          <li>The page is not fully loaded</li>
+          <li>The extension needs permission for this site</li>
+          <li>The page has special security restrictions</li>
+        </ul>
+        <div class="error-details">${screenshotError.message}</div>
+        <div class="help-text">Try refreshing the page or checking extension permissions.</div>
+      `;
+      
+      chatHistory.appendChild(errorMessage);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+      
+      // Fall back to extracting content
+      try {
+        await extractContent(tab);
+      } catch (extractError) {
+        console.error('Content extraction failed:', extractError);
+        appendMessage(`Failed to extract content: ${extractError.message}. Please refresh the page and try again.`, 'error');
+      }
     }
   } catch (error) {
     console.error('Page reading error:', error);
-    if (error.message.includes('Extension context invalidated')) {
-      appendMessage('Extension needs to be reloaded. Please refresh the page.', 'error');
-    } else {
-      appendMessage('Failed to read page. Please try again in a moment.', 'error');
-    }
+    const errorMessage = error.message.includes('Extension context invalidated')
+      ? 'Extension needs to be reloaded. Please refresh the page and try again.'
+      : `Failed to read page: ${error.message}. Please try refreshing the page or checking extension permissions.`;
+    
+    appendMessage(errorMessage, 'error');
   }
 }
 
@@ -1022,19 +1067,36 @@ style.textContent = `
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
-    padding: 10px;
-    margin: 5px 0;
+    padding: 16px;
+    margin: 8px 0;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .error-message ul {
+    margin: 8px 0;
+    padding-left: 24px;
+  }
+
+  .error-message li {
+    margin: 4px 0;
+  }
+
+  .error-details {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    margin-top: 8px;
     border-radius: 4px;
     font-family: monospace;
-    white-space: pre-wrap;
+    font-size: 12px;
     word-break: break-word;
   }
 
-  .error-message .details {
+  .help-text {
     margin-top: 8px;
-    padding: 8px;
-    background-color: rgba(0,0,0,0.05);
-    border-radius: 4px;
+    color: #666;
+    font-style: italic;
     font-size: 12px;
   }
 
